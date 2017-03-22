@@ -1,0 +1,46 @@
+apply plugin: 'com.android.application'
+
+apply plugin: 'realm-android'
+
+android {
+    signingConfigs {
+        // see the link below if your debug keystore does not exist
+        // http://stackoverflow.com/questions/8576732/there-is-no-debug-keystore-in-android-folder
+
+        release {
+            keyAlias 'keyAlias'
+            keyPassword 'keyPassword'
+            storePassword 'storePassword'
+            storeFile file("${rootDir}/keystores/app.keystore")
+        }
+    }
+    compileSdkVersion 23
+    buildToolsVersion '25.0.0'
+    defaultConfig {
+        applicationId "com.ibm.us.googlefittoolset"
+        minSdkVersion 21
+        targetSdkVersion 23
+        versionCode 1
+        versionName "1.0"
+        // Enabling multidex support.
+        multiDexEnabled true
+    }
+    buildTypes {
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            debuggable false
+            signingConfig signingConfigs.release
+        }
+        debug {
+            debuggable true
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    testCompile 'junit:junit:4.12'
+    compile 'com.android.support:appcompat-v7:23.4.0'
+    compile 'com.google.android.gms:play-services:9.4.0'
+}
