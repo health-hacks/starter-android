@@ -24,13 +24,12 @@ The data model only consists of two model classes: `HealthData` and `HealthDataM
 **HealthData**
 ```
 public class HealthData extends RealmObject {
-    public String id;   //label+timestamp
-
+    public String id; 
     public String source;
-    public String origin;
-    public String type;
-
     public Date date;
+    public String type;
+    public String participantId;
+    public String sessionId;
 }
 ```
 
