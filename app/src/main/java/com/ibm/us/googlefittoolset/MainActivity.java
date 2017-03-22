@@ -1,7 +1,6 @@
 package com.ibm.us.googlefittoolset;
 
 
-import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.method.ScrollingMovementMethod;
@@ -67,8 +66,8 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     private GoogleApiClient mClient = null;
 
-    TextView tv_info;
-    TextView tv_list_info;
+    TextView infoTextView;
+    TextView listInfoTextView;
 
     // List View for displaying Google Fit data
     ListView listView;
@@ -90,7 +89,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
      * ATTENTION: This was auto-generated to implement the App Indexing API.
      * See https://g.co/AppIndexing/AndroidStudio for more information.
      */
-    private GoogleApiClient client;
+    private GoogleApiClient appIndexClient;
 
     //Realm
     private Realm realm;
@@ -101,12 +100,12 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        tv_info = (TextView) findViewById(R.id.tv_main_info);
-        tv_info.setText("> Welcome to Google Toolset! \n");
-        tv_info.setMovementMethod(new ScrollingMovementMethod());
+        infoTextView = (TextView) findViewById(R.id.tv_main_info);
+        infoTextView.setText("> Welcome to Google Toolset! \n");
+        infoTextView.setMovementMethod(new ScrollingMovementMethod());
 
-        tv_list_info = (TextView) findViewById(R.id.tv_list_info);
-        tv_list_info.setText("Data types:");
+        listInfoTextView = (TextView) findViewById(R.id.tv_list_info);
+        listInfoTextView.setText("Data types:");
 
         curListContent = new ArrayList<String>(Arrays.asList(strListView));
 
@@ -119,23 +118,18 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         /**
          * Realm
          */
-        // Create the Realm configuration
-        realmConfig = new RealmConfiguration.Builder(this).deleteRealmIfMigrationNeeded().build();
         // Open the Realm for the UI thread.
-        realm = Realm.getInstance(realmConfig);
+        realmConfig = new RealmConfiguration.Builder(this).deleteRealmIfMigrationNeeded().build();
+        Realm.setDefaultConfiguration(realmConfig);
+        realm = Realm.getDefaultInstance();
 
         Log.e(TAG, realm.toString());
-
 
         buildFitnessClient();
         // ATTENTION: This was auto-generated to implement the App Indexing API.
         // See https://g.co/AppIndexing/AndroidStudio for more information.
-        client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
-
-
-
+        appIndexClient = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
     }
-
 
     // Create a message handling object as an anonymous class.
     public void onItemClick(AdapterView parent, View v, int position, long id) {
@@ -159,7 +153,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                     listAdapter.add(str);
                 }
                 curContent = "weight";
-                tv_list_info.setText("Weight data: ");
+                listInfoTextView.setText("Weight data: ");
 
                 listAdapter.notifyDataSetChanged();
             }
@@ -178,7 +172,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                     listAdapter.add(str);
                 }
                 curContent = "step";
-                tv_list_info.setText("Step data: ");
+                listInfoTextView.setText("Step data: ");
 
                 listAdapter.notifyDataSetChanged();
             }
@@ -190,7 +184,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 for (String str : strListView)
                     listAdapter.add(str);
                 curContent = "menu";
-                tv_list_info.setText("Data types: ");
+                listInfoTextView.setText("Data types: ");
 
                 listAdapter.notifyDataSetChanged();
             }
@@ -227,7 +221,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                             @Override
                             public void onConnected(Bundle bundle) {
                                 Log.i(TAG, "Connected!!!");
-                                tv_info.append("> App connected to Google Fit \n");
+                                infoTextView.append("> App connected to Google Fit \n");
 
                                 // Now you can make calls to the Fitness APIs.  What to do?
                                 // Look at some data!!
@@ -246,7 +240,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                                 //subscribe(DataType.TYPE_HEART_RATE_BPM);
 
                                 onGoogleFitConnected();
-
                             }
 
                             @Override
@@ -255,10 +248,10 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                                 // you'll be able to determine the reason and react to it here.
                                 if (i == GoogleApiClient.ConnectionCallbacks.CAUSE_NETWORK_LOST) {
                                     Log.i(TAG, "Connection lost.  Cause: Network Lost.");
-                                    tv_info.append("> Connection lost.  Cause: Network Lost. \n");
+                                    infoTextView.append("> Connection lost.  Cause: Network Lost. \n");
                                 } else if (i == GoogleApiClient.ConnectionCallbacks.CAUSE_SERVICE_DISCONNECTED) {
                                     Log.i(TAG, "Connection lost.  Reason: Service Disconnected");
-                                    tv_info.append("> Connection lost.  Reason: Service Disconnected \n");
+                                    infoTextView.append("> Connection lost.  Reason: Service Disconnected \n");
                                 }
                             }
                         }
@@ -268,13 +261,12 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                     public void onConnectionFailed(ConnectionResult result) {
                         Log.i(TAG, "Google Play services connection failed. Cause: " +
                                 result.toString());
-                        tv_info.append("> Google Play services connection failed. Cause: " +
+                        infoTextView.append("> Google Play services connection failed. Cause: " +
                                 result.toString() + "\n");
                     }
                 })
                 .build();
     }
-
 
     /**
      * Pulling off data from Google Fit
@@ -301,7 +293,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
                         // update Realm with the result
                         for (DataSet dataSet : dataReadResult.getDataSets()) {
-                            pushDataSet2Realm(dataSet);
+                            saveDataSetInRealm(dataSet);
                         }
                     }
                 });
@@ -324,7 +316,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
                         // update Realm with the result
                         for (DataSet dataSet : dataReadResult.getDataSets()) {
-                            pushDataSet2Realm(dataSet);
+                            saveDataSetInRealm(dataSet);
                         }
                     }
                 });
@@ -349,7 +341,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
         isDatabaseLoaded = true;
     }
-
 
     /**
      * Subscribe to an available {@link DataType}. Subscriptions can exist across application
@@ -384,7 +375,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         // [END subscribe_to_datatype]
     }
 
-
     /**
      * Fetch a list of all active subscriptions and log it. Since the logger for this sample
      * also prints to the screen, we can see what is happening in this way.
@@ -399,13 +389,12 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                         for (Subscription sc : listSubscriptionsResult.getSubscriptions()) {
                             DataType dt = sc.getDataType();
                             Log.i(TAG, "Active subscription for data type: " + dt.getName());
-                            tv_info.append("> Active subscription for data type: " + dt.getName() + "\n");
+                            infoTextView.append("> Active subscription for data type: " + dt.getName() + "\n");
                         }
                     }
                 });
         // [END list_current_subscriptions]
     }
-
 
     /**
      * Cancel the ACTIVITY_SAMPLE subscription by calling unsubscribe on that {@link DataType}.
@@ -431,7 +420,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 });
         // [END unsubscribe_from_datatype]
     }
-
 
     /**
      * Return a {@link DataReadRequest} for all step count changes in the past week.
@@ -465,7 +453,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         return readRequest;
     }
 
-
     /**
      * Return a {@link DataReadRequest} for all step count changes in the past week.
      */
@@ -492,7 +479,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         return readRequest;
     }
 
-
     /**
      * Return a {@link SessionReadRequest} for all speed data in the past week.
      */
@@ -517,97 +503,19 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         return readRequest;
     }
 
+    // ===================
+    // REALM HELPERS
+    // ===================
 
-    /**
-     * Log a record of the query result. It's possible to get more constrained data sets by
-     * specifying a data source or data type, but for demonstrative purposes here's how one would
-     * dump all the data. In this sample, logging also prints to the device screen, so we can see
-     * what the query returns, but your app should not log fitness information as a privacy
-     * consideration. A better option would be to dump the data you receive to a local data
-     * directory to avoid exposing it to other applications.
-     */
-    public static void printData(DataReadResult dataReadResult) {
-        // [START parse_read_data_result]
-        // If the DataReadRequest object specified aggregated data, dataReadResult will be returned
-        // as buckets containing DataSets, instead of just DataSets.
-        if (dataReadResult.getBuckets().size() > 0) {
-            Log.i(TAG, "Number of returned buckets of DataSets is: "
-                    + dataReadResult.getBuckets().size());
-            for (Bucket bucket : dataReadResult.getBuckets()) {
-                List<DataSet> dataSets = bucket.getDataSets();
-                for (DataSet dataSet : dataSets) {
-                    dumpDataSet(dataSet);
-                }
-            }
-        } else if (dataReadResult.getDataSets().size() > 0) {
-            Log.i(TAG, "Number of returned DataSets is: "
-                    + dataReadResult.getDataSets().size());
-            for (DataSet dataSet : dataReadResult.getDataSets()) {
-                dumpDataSet(dataSet);
-            }
-        }
-        // [END parse_read_data_result]
-    }
-
-
-    // [START parse_dataset]
-    private static void dumpDataSet(DataSet dataSet) {
-        Log.i(TAG, "Data returned for Data type: " + dataSet.getDataType().getName());
-
-        DateFormat dateFormat = DateFormat.getDateInstance(DateFormat.LONG, Locale.US);
-        DateFormat timeFormat = DateFormat.getTimeInstance(DateFormat.LONG, Locale.US);
-
-        for (DataPoint dp : dataSet.getDataPoints()) {
-            Log.i(TAG, "Data point:");
-            Log.i(TAG, "\tType: " + dp.getDataType().getName());
-            Log.i(TAG, "\tDate: " + dateFormat.format(dp.getStartTime(TimeUnit.MILLISECONDS)));
-            Log.i(TAG, "\tStart: " + timeFormat.format(dp.getStartTime(TimeUnit.MILLISECONDS)));
-            Log.i(TAG, "\tEnd: " + timeFormat.format(dp.getEndTime(TimeUnit.MILLISECONDS)));
-            for (Field field : dp.getDataType().getFields()) {
-                Log.i(TAG, "\tField: " + field.getName() +
-                        " Value: " + dp.getValue(field));
-            }
-        }
-    }
-
-
-    public static void dumpSession(Session session) {
-        DateFormat dateFormat = DateFormat.getDateInstance(DateFormat.LONG, Locale.US);
-        DateFormat timeFormat = DateFormat.getTimeInstance(DateFormat.LONG, Locale.US);
-
-        Log.i(TAG, "Data returned for Session: " + session.getName()
-                + "\n\tDescription: " + session.getDescription()
-                + "\n\tDate: " + dateFormat.format(session.getStartTime(TimeUnit.MILLISECONDS))
-                + "\n\tStart: " + timeFormat.format(session.getStartTime(TimeUnit.MILLISECONDS))
-                + "\n\tEnd: " + timeFormat.format(session.getEndTime(TimeUnit.MILLISECONDS)));
-    }
-
-
-    public static void printSession(SessionReadResult sessionReadResult) {
-        // Get a list of the sessions that match the criteria to check the result.
-        Log.i(TAG, "Session read was successful. Number of returned sessions is: "
-                + sessionReadResult.getSessions().size());
-        for (Session session : sessionReadResult.getSessions()) {
-            // Process the session
-            dumpSession(session);
-
-            // Process the data sets for this session
-            List<DataSet> dataSets = sessionReadResult.getDataSet(session);
-            for (DataSet dataSet : dataSets) {
-                dumpDataSet(dataSet);
-            }
-        }
-    }
-
-    private void pushDataSet2Realm(DataSet dataSet){
+    private void saveDataSetInRealm(DataSet dataSet){
         Log.i(TAG, "Updating Data Set in Realm: " + dataSet.getDataType().getName());
 
         for (DataPoint dp : dataSet.getDataPoints()) {
-            pushDataPoint2Realm(dp);
+            saveDataPointInRealm(dp);
         }
     }
 
-    private void pushDataPoint2Realm(DataPoint dataPoint) {
+    private void saveDataPointInRealm(DataPoint dataPoint) {
 
         long timestamp = dataPoint.getEndTime(TimeUnit.MILLISECONDS);
         String origin = dataPoint.getOriginalDataSource().getName();
@@ -634,82 +542,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
         String id = label + Long.toString(timestamp);
 
-
-        //check duplicates
-        RealmResults<HealthData> result = realm.where(HealthData.class).equalTo("id", id).findAll();
-        if(result.size()>0){
-            // pring log
-            Log.i(TAG, "EXISTED Data point:");
-            Log.i(TAG, "\tLabel: " + label);
-            Log.i(TAG, "\tDate: " + DateFormat.getTimeInstance(DateFormat.LONG, Locale.US)
-                    .format(dataPoint.getEndTime(TimeUnit.MILLISECONDS)));
-            Log.i(TAG, "\tValue: " + value);
-
-            return;
-        }
-
-        // creating and pushing realm objects
-        realm.beginTransaction();
-
-        HealthData healthData = realm.createObject(HealthData.class);
-        healthData.date = new Date(timestamp);
-        healthData.origin = origin;
-        healthData.source = source;
-        healthData.id = id;
-
-        HealthDataValue healthDataValue = realm.createObject(HealthDataValue.class);
-        healthDataValue.value = value;
-        healthDataValue.label = label;
-        healthDataValue.healthObject = healthData;
-
-        realm.commitTransaction();
-
-        // pring log
-        Log.i(TAG, "NEW Data point:");
-        Log.i(TAG, "\tLabel: " + label);
-        Log.i(TAG, "\tDate: " + DateFormat.getTimeInstance(DateFormat.LONG, Locale.US)
-                .format(dataPoint.getEndTime(TimeUnit.MILLISECONDS)));
-        Log.i(TAG, "\tValue: " + value);
+        HealthData.storeData(id, timestamp, origin, source, label, value);
     }
-
-
-    /**
-     * create and push HealthData object in Realm
-     * @param timestamp
-     * @param source
-     * @param origin
-     * @param type
-     */
-    private void createHealthData(final long timestamp, final String source, final String origin, String type) {
-
-        realm.beginTransaction();
-
-        HealthData healthData = realm.createObject(HealthData.class);
-        healthData.date = new Date(timestamp);
-        healthData.origin = origin;
-        healthData.source = source;
-        healthData.id = source + Long.toString(timestamp);
-
-        realm.commitTransaction();
-    }
-
-
-    /**
-     * create and push HealthDataValue object in Realm
-     * @param healthObject
-     * @param label
-     * @param value
-     */
-    private void createHealthDataValue(HealthData healthObject, String label, float value) {
-
-        realm.beginTransaction();
-
-        HealthDataValue healthDataValue = realm.createObject(HealthDataValue.class);
-        healthDataValue.value = value;
-        healthDataValue.label = label;
-        healthDataValue.healthObject = healthObject;
-
-        realm.commitTransaction();
-    }
-
 }
