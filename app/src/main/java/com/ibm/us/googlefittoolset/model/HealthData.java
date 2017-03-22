@@ -11,13 +11,13 @@ import java.util.Date;
  */
 public class HealthData extends RealmObject {
 
-    public String id;   //label+timestamp
+    public String id;
 
     public String source;
-    public String origin;
-    public String type;
-
     public Date date;
+    public String type;
+    public String participantId;
+    public String sessionId;
 
     public HealthData(){}
 
@@ -28,8 +28,16 @@ public class HealthData extends RealmObject {
         return str;
     }
 
-    public static void storeData(String id, long timestamp, String origin, String source, String dataLabel, float dataValue) {
+    private static String generateCompoundId(Date date, String participantId, String source, String type) {
+        String dateInSeconds = "" + date.getTime()/1000;
+        return dateInSeconds + participantId + source + type;
+    }
+
+    public static void storeData(long timestamp, String source, String participantId, String sessionId, String type,
+                                 String dataLabel, float dataValue) {
         Realm realm = Realm.getDefaultInstance();
+        Date date = new Date(timestamp);
+        String id = generateCompoundId(date, participantId, source, type);
 
         // check duplicates
         // if duplicates exist, do not store data
@@ -42,8 +50,10 @@ public class HealthData extends RealmObject {
         realm.beginTransaction();
 
         HealthData healthData = realm.createObject(HealthData.class);
-        healthData.date = new Date(timestamp);
-        healthData.origin = origin;
+        healthData.date = date;
+        healthData.sessionId = sessionId;
+        healthData.participantId = participantId;
+        healthData.type = type;
         healthData.source = source;
         healthData.id = id;
 

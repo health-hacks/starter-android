@@ -148,7 +148,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
                 for(HealthDataValue result : healthDataValues){
                     str = "Date: " + result.healthObject.date.toString() + "\n"
-                            + "Steps: " + result.value;
+                            + "Weight: " + result.value;
 
                     listAdapter.add(str);
                 }
@@ -167,7 +167,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
                 for(HealthDataValue result : healthDataValues){
                     str = "Date: " + result.healthObject.date.toString() + "\n"
-                            + "Weight (kg): " + result.value;
+                            + "Steps: " + result.value;
 
                     listAdapter.add(str);
                 }
@@ -542,6 +542,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
         String id = label + Long.toString(timestamp);
 
-        HealthData.storeData(id, timestamp, origin, source, label, value);
+        HealthData.storeData(timestamp, source, "-1", "-1", "google-fit", label, value);
     }
 }

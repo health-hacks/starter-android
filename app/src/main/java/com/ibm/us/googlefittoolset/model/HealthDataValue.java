@@ -8,9 +8,7 @@ import io.realm.RealmObject;
 public class HealthDataValue extends RealmObject{
 
     public HealthData healthObject;
-
     public String label;
-
     public float value;
 
 
